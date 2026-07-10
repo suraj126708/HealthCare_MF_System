@@ -85,6 +85,11 @@ exports.holdSlot = async ({ patientId, doctorId, slotStart }) => {
   const start = new Date(slotStart);
   if (Number.isNaN(start.getTime())) throw new AppError(400, 'Invalid slotStart');
 
+  const minStart = new Date(Date.now() + 5 * 60 * 1000);
+  if (start < minStart) {
+    throw new AppError(400, 'Appointments must be booked at least 5 minutes in advance');
+  }
+
   const profile = await DoctorProfile.findOne({ userId: doctorId }).lean();
   if (!profile) throw new AppError(404, 'Doctor profile not found');
 

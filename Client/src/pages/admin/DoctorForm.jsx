@@ -2,6 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import {
+  btnDangerOutline,
+  card,
+  cardMuted,
+  input,
+  inputInline,
+  label,
+  labelSm,
+  pageWrap,
+  select,
+} from "../../constants/ui";
 import adminApi from "../../services/admin";
 
 const WEEKDAYS = [
@@ -153,9 +166,7 @@ export default function AdminDoctorForm() {
               profile.slotDurationMinutes || doc.slotDurationMinutes || 30,
             ),
             workingHours:
-              normalizedHours.length > 0
-                ? normalizedHours
-                : makeDefaultWorkingHours(),
+              normalizedHours.length > 0 ? normalizedHours : makeDefaultWorkingHours(),
           });
           setSelectedDays([]);
         }
@@ -202,60 +213,58 @@ export default function AdminDoctorForm() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-lg font-semibold text-slate-900">
-        {isEdit ? "Edit doctor" : "Create doctor"}
-      </h1>
+    <div className={pageWrap}>
+      <PageHeader title={isEdit ? "Edit doctor" : "Create doctor"} />
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <div className={card}>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-sm font-medium text-slate-700">Name</label>
-              <input
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-                {...register("name", { required: "Name is required" })}
-              />
-              {errors.name && <div className="mt-1 text-xs text-red-600">{errors.name.message}</div>}
+              <label className={label}>Name</label>
+              <input className={input} {...register("name", { required: "Name is required" })} />
+              {errors.name && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</div>
+              )}
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Email</label>
+              <label className={label}>Email</label>
               <input
                 type="email"
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                className={input}
                 {...register("email", { required: "Email is required" })}
               />
-              {errors.email && <div className="mt-1 text-xs text-red-600">{errors.email.message}</div>}
+              {errors.email && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email.message}</div>
+              )}
             </div>
             {!isEdit && (
               <div>
-                <label className="text-sm font-medium text-slate-700">Password</label>
+                <label className={label}>Password</label>
                 <input
                   type="password"
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                  className={input}
                   {...register("password", { required: "Password is required" })}
                 />
                 {errors.password && (
-                  <div className="mt-1 text-xs text-red-600">{errors.password.message}</div>
+                  <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</div>
                 )}
               </div>
             )}
             <div>
-              <label className="text-sm font-medium text-slate-700">Specialization</label>
+              <label className={label}>Specialization</label>
               <input
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                className={input}
                 {...register("specialization", { required: "Specialization is required" })}
               />
               {errors.specialization && (
-                <div className="mt-1 text-xs text-red-600">{errors.specialization.message}</div>
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {errors.specialization.message}
+                </div>
               )}
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Slot duration</label>
-              <select
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-                {...register("slotDurationMinutes", { required: true })}
-              >
+              <label className={label}>Slot duration</label>
+              <select className={select} {...register("slotDurationMinutes", { required: true })}>
                 <option value={15}>15 min</option>
                 <option value={30}>30 min</option>
                 <option value={45}>45 min</option>
@@ -265,14 +274,14 @@ export default function AdminDoctorForm() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="text-sm font-semibold text-slate-900">Working hours</h2>
+        <div className={card}>
+          <h2 className="text-sm font-semibold text-text">Working hours</h2>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={removeSelectedDays}
               disabled={!selectedDays.length}
-              className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className={`${btnDangerOutline} disabled:cursor-not-allowed disabled:opacity-60`}
             >
               Remove selected days
             </button>
@@ -281,7 +290,7 @@ export default function AdminDoctorForm() {
                 value={dayToAdd}
                 onChange={(e) => setDayToAdd(e.target.value)}
                 disabled={missingDays.length === 0}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${inputInline} !mt-0 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 {missingDays.length === 0 ? (
                   <option value="">All weekdays added</option>
@@ -293,41 +302,45 @@ export default function AdminDoctorForm() {
                   ))
                 )}
               </select>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={addMissingDay}
                 disabled={!dayToAdd}
-                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Add day
-              </button>
+              </Button>
             </div>
           </div>
           <div className="mt-4 grid gap-2">
             {fields.map((field, idx) => (
-              <div key={field.id} className="grid items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-3">
+              <div
+                key={field.id}
+                className={`grid items-center gap-2 p-3 sm:grid-cols-3 ${cardMuted}`}
+              >
                 <label className="flex items-center gap-2 sm:col-span-3">
                   <input
                     type="checkbox"
                     checked={selectedDays.includes(workingHours[idx]?.day)}
                     onChange={() => toggleDaySelection(workingHours[idx]?.day)}
-                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-500"
+                    className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500"
                   />
-                  <span className="text-xs text-slate-600">Select to remove</span>
+                  <span className="text-xs text-text-muted">Select to remove</span>
                 </label>
                 <input
                   readOnly
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  className={`${inputInline} bg-surface-muted`}
                   {...register(`workingHours.${idx}.day`)}
                 />
                 <input
                   type="time"
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                  className={inputInline}
                   {...register(`workingHours.${idx}.startTime`, { required: true })}
                 />
                 <input
                   type="time"
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                  className={inputInline}
                   {...register(`workingHours.${idx}.endTime`, { required: true })}
                 />
               </div>
@@ -335,15 +348,10 @@ export default function AdminDoctorForm() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-        >
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Saving…" : isEdit ? "Update doctor" : "Create doctor"}
-        </button>
+        </Button>
       </form>
     </div>
   );
 }
-

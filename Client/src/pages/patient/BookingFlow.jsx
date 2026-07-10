@@ -3,6 +3,18 @@ import { format, parseISO } from "date-fns";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import SlotGrid from "../../components/SlotGrid";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import {
+  alertWarning,
+  card,
+  cardMuted,
+  cardSm,
+  emptyState,
+  input,
+  label,
+  pageWrap,
+} from "../../constants/ui";
 import { doctorsApi } from "../../services/doctors";
 import { appointmentsApi } from "../../services/appointments";
 
@@ -21,7 +33,7 @@ export default function BookingFlow() {
   const initialDate = params.get("date") || format(new Date(), "yyyy-MM-dd");
   const initialSlotStart = location.state?.slotStart || null;
 
-  const [step, setStep] = useState(1); // 1 hold, 2 symptoms, 3 review
+  const [step, setStep] = useState(1);
   const [date, setDate] = useState(initialDate);
   const [slots, setSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -60,7 +72,6 @@ export default function BookingFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doctorId]);
 
-  // Start / update countdown for holds.
   useEffect(() => {
     if (!hasHold) {
       setRemaining(0);
@@ -131,7 +142,7 @@ export default function BookingFlow() {
       setStep(1);
       return;
     }
-    if (remaining <= 0) return; // expiry effect will reset
+    if (remaining <= 0) return;
 
     setSubmitting(true);
     try {
@@ -155,7 +166,7 @@ export default function BookingFlow() {
       setStep(1);
       return;
     }
-    if (remaining <= 0) return; // expiry effect will reset
+    if (remaining <= 0) return;
 
     setSubmitting(true);
     try {
@@ -179,51 +190,39 @@ export default function BookingFlow() {
 
   if (!doctorId) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <h1 className="text-lg font-semibold text-slate-900">Booking</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Choose a doctor first.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/patients/doctors")}
-            className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
+      <div className={pageWrap}>
+        <div className={card}>
+          <h1 className="text-lg font-semibold text-text">Booking</h1>
+          <p className="mt-1 text-sm text-text-muted">Choose a doctor first.</p>
+          <Button className="mt-4" onClick={() => navigate("/patients/doctors")}>
             Browse doctors
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Booking flow</h1>
-          <p className="mt-1 text-sm text-slate-600">Step {step} of 3</p>
-        </div>
+    <div className={pageWrap}>
+      <PageHeader title="Booking flow" description={`Step ${step} of 3`}>
         {hasHold && (
-          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-            Hold: <span className="font-medium">{remaining}s</span>
+          <div className={`${cardSm} text-sm text-text`}>
+            Hold: <span className="font-medium text-brand-600 dark:text-brand-400">{remaining}s</span>
           </div>
         )}
-      </div>
+      </PageHeader>
 
       {expiredBanner && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Slot expired, pick another.
-        </div>
+        <div className={`mt-4 ${alertWarning}`}>Slot expired, pick another.</div>
       )}
 
-      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5">
+      <div className={`mt-6 ${card}`}>
         {step === 1 && (
           <>
-            <h2 className="text-sm font-semibold text-slate-900">1) Pick a slot</h2>
+            <h2 className="text-sm font-semibold text-text">1) Pick a slot</h2>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <label className="text-sm font-medium text-slate-700">Date</label>
+                <label className={label}>Date</label>
                 <input
                   type="date"
                   value={date}
@@ -232,68 +231,53 @@ export default function BookingFlow() {
                     setDate(next);
                     loadSlots(next);
                   }}
-                  className="mt-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                  className={input}
                 />
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-text-subtle">
                 You’ll see a countdown after holding a slot.
               </div>
             </div>
 
             <div className="mt-4">
               {loadingSlots ? (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  Loading…
-                </div>
+                <div className={`${cardMuted} text-sm text-text-muted`}>Loading…</div>
               ) : (
-                <SlotGrid
-                  slots={slots}
-                  onPick={(slotStart) => onPickSlot(slotStart)}
-                />
+                <SlotGrid slots={slots} onPick={(slotStart) => onPickSlot(slotStart)} />
               )}
             </div>
 
-            {submitting && (
-              <div className="mt-3 text-xs text-slate-500">Holding slot…</div>
-            )}
+            {submitting && <div className="mt-3 text-xs text-text-subtle">Holding slot…</div>}
           </>
         )}
 
         {step === 2 && (
           <>
-            <h2 className="text-sm font-semibold text-slate-900">2) Symptoms</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Held slot: <span className="font-medium text-slate-900">{holdLabel}</span>
+            <h2 className="text-sm font-semibold text-text">2) Symptoms</h2>
+            <p className="mt-1 text-sm text-text-muted">
+              Held slot: <span className="font-medium text-text">{holdLabel}</span>
             </p>
 
             <form className="mt-4 space-y-3" onSubmit={onSubmitSymptoms}>
               <div>
-                <label className="text-sm font-medium text-slate-700">Describe symptoms</label>
+                <label className={label}>Describe symptoms</label>
                 <textarea
                   value={symptoms}
                   onChange={(e) => setSymptoms(e.target.value)}
                   required
                   rows={4}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                  className={input}
                   placeholder="e.g. Fever for 3 days, mild chest tightness…"
                 />
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
+                <Button type="button" variant="secondary" onClick={() => setStep(1)}>
                   Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting || !symptoms.trim()}
-                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-                >
+                </Button>
+                <Button type="submit" disabled={submitting || !symptoms.trim()}>
                   {submitting ? "Saving…" : "Continue"}
-                </button>
+                </Button>
               </div>
             </form>
           </>
@@ -301,44 +285,33 @@ export default function BookingFlow() {
 
         {step === 3 && (
           <>
-            <h2 className="text-sm font-semibold text-slate-900">3) Review</h2>
+            <h2 className="text-sm font-semibold text-text">3) Review</h2>
             <div className="mt-4 grid gap-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-medium text-slate-500">Slot</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">{holdLabel}</div>
+              <div className={cardMuted}>
+                <div className="text-xs font-medium text-text-muted">Slot</div>
+                <div className="mt-1 text-sm font-semibold text-text">{holdLabel}</div>
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-medium text-slate-500">Your symptoms</div>
-                <div className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{symptoms}</div>
+              <div className={cardMuted}>
+                <div className="text-xs font-medium text-text-muted">Your symptoms</div>
+                <div className="mt-1 whitespace-pre-wrap text-sm text-text">{symptoms}</div>
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="text-xs font-medium text-slate-500">Chief complaint (confirmation)</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">
-                  {chiefComplaint || "—"}
-                </div>
+              <div className={cardSm}>
+                <div className="text-xs font-medium text-text-muted">Chief complaint (confirmation)</div>
+                <div className="mt-1 text-sm font-semibold text-text">{chiefComplaint || "—"}</div>
               </div>
             </div>
 
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
+              <Button type="button" variant="secondary" onClick={() => setStep(2)}>
                 Back
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={onConfirm}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-              >
+              </Button>
+              <Button type="button" disabled={submitting} onClick={onConfirm}>
                 {submitting ? "Confirming…" : "Confirm appointment"}
-              </button>
+              </Button>
             </div>
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs text-text-subtle">
               If the hold expires, you’ll be returned to slot selection (no silent retry).
             </p>
           </>
@@ -347,4 +320,3 @@ export default function BookingFlow() {
     </div>
   );
 }
-

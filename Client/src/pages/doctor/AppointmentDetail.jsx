@@ -3,6 +3,9 @@ import { format, parseISO } from "date-fns";
 import { Link, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import Badge from "../../components/Badge";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import { card, cardMuted, emptyState, pageWrap } from "../../constants/ui";
 import { doctorApi } from "../../services/doctor";
 
 function slotLabel(slotStart) {
@@ -45,35 +48,29 @@ export default function DoctorAppointmentDetail() {
   const summary = data?.preVisitSummary ?? data ?? {};
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-lg font-semibold text-slate-900">Appointment</h1>
-      {loading && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          Loading…
-        </div>
-      )}
+    <div className={pageWrap}>
+      <PageHeader title="Appointment" />
+      {loading && <div className={`mt-4 ${emptyState}`}>Loading…</div>}
       {!loading && data && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
+        <div className={`mt-4 ${card}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-sm font-semibold text-text">
                 {data.patientName || data.patient?.name || "Patient"}
               </div>
-              <div className="mt-1 text-xs text-slate-600">{slotLabel(data.slotStart)}</div>
+              <div className="mt-1 text-xs text-text-muted">{slotLabel(data.slotStart)}</div>
             </div>
             <Badge variant="urgency" value={summary.urgencyLevel || "Low"} />
           </div>
 
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-medium text-slate-500">Chief complaint</div>
-            <div className="mt-1 text-sm text-slate-900">
-              {summary.chiefComplaint || "Not available"}
-            </div>
+          <div className={`mt-4 ${cardMuted}`}>
+            <div className="text-xs font-medium text-text-muted">Chief complaint</div>
+            <div className="mt-1 text-sm text-text">{summary.chiefComplaint || "Not available"}</div>
           </div>
 
-          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-medium text-slate-500">Suggested questions</div>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-800">
+          <div className={`mt-4 ${cardMuted}`}>
+            <div className="text-xs font-medium text-text-muted">Suggested questions</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-text">
               {(summary.suggestedQuestions ?? []).slice(0, 3).map((q) => (
                 <li key={q}>{q}</li>
               ))}
@@ -82,11 +79,8 @@ export default function DoctorAppointmentDetail() {
           </div>
 
           <div className="mt-4">
-            <Link
-              to={`/doctor/appointments/${appointmentId}/complete`}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Complete appointment
+            <Link to={`/doctor/appointments/${appointmentId}/complete`}>
+              <Button>Complete appointment</Button>
             </Link>
           </div>
         </div>
@@ -94,4 +88,3 @@ export default function DoctorAppointmentDetail() {
     </div>
   );
 }
-

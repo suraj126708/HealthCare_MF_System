@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Appointment = require('../models/Appointment');
 const DoctorProfile = require('../models/DoctorProfile');
 const emailService = require('./emailService');
+const { formatAppointmentReference } = require('../utils/appointmentId');
 
 const BACKOFF_MS = [
   60 * 1000,
@@ -34,6 +35,7 @@ async function buildEmailContext(notification) {
 
       Object.assign(context, {
         appointmentId: appt._id.toString(),
+        appointmentReference: formatAppointmentReference(appt._id),
         slotStart: appt.slotStart,
         slotEnd: appt.slotEnd,
         symptoms: appt.symptoms,

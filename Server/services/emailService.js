@@ -115,7 +115,7 @@ function baseLayout({ title, preheader, bodyHtml, ctaLabel, ctaUrl }) {
 
 function appointmentDetailsTable(context) {
   const rows = [
-    detailRow("Appointment ID", context.appointmentId),
+    detailRow("Appointment ID", context.appointmentReference || context.appointmentId),
     detailRow("Patient", context.patientName),
     detailRow("Doctor", context.doctorName),
     detailRow("Specialization", context.specialization),
@@ -177,6 +177,9 @@ function templateFor(type, context = {}) {
         intro,
         "",
         "Appointment details:",
+        context.appointmentReference || context.appointmentId
+          ? `Appointment ID: ${context.appointmentReference || context.appointmentId}`
+          : "",
         `Patient: ${context.patientName || "—"}`,
         `Doctor: ${context.doctorName || "—"}`,
         `Specialization: ${context.specialization || "—"}`,
@@ -255,7 +258,7 @@ function templateFor(type, context = {}) {
         intro,
         context.cancelReason ? `Reason: ${context.cancelReason}` : "",
         "",
-        `Appointment ID: ${context.appointmentId || "—"}`,
+        `Appointment ID: ${context.appointmentReference || context.appointmentId || "—"}`,
         `Patient: ${context.patientName || "—"}`,
         `Doctor: ${context.doctorName || "—"}`,
         `Date: ${formatDate(context.slotStart)}`,
@@ -293,7 +296,7 @@ function templateFor(type, context = {}) {
         `Your appointment with ${context.doctorName || "your doctor"} has been cancelled because the doctor is on leave.`,
         context.cancelReason ? `Leave reason: ${context.cancelReason}` : "",
         "",
-        `Appointment ID: ${context.appointmentId || "—"}`,
+        `Appointment ID: ${context.appointmentReference || context.appointmentId || "—"}`,
         `Doctor: ${context.doctorName || "—"}`,
         `Date: ${formatDate(context.slotStart)}`,
         `Time: ${formatTime(context.slotStart)} – ${formatTime(context.slotEnd)}`,

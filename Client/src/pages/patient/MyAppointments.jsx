@@ -3,6 +3,20 @@ import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Badge from "../../components/Badge";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import {
+  btnDangerOutline,
+  card,
+  ddValue,
+  dtLabel,
+  emptyState,
+  input,
+  labelSm,
+  modalOverlay,
+  modalPanel,
+  pageWrap,
+} from "../../constants/ui";
 import { appointmentsApi } from "../../services/appointments";
 
 function slotLabel(slotStart) {
@@ -28,13 +42,13 @@ function AppointmentCard({ appointment, onCancel, cancelling }) {
   const status = appointment.status || "pending";
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className={card}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-slate-900">
+          <div className="text-sm font-semibold text-text">
             {appointment.doctorName || appointment.doctor?.name || "Doctor"}
           </div>
-          <div className="mt-1 text-xs text-slate-600">
+          <div className="mt-1 text-xs text-text-muted">
             {appointment.specialization || "General practice"}
           </div>
         </div>
@@ -43,26 +57,22 @@ function AppointmentCard({ appointment, onCancel, cancelling }) {
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium text-slate-500">Date & time</dt>
-          <dd className="mt-1 text-sm text-slate-800">
-            {slotLabel(appointment.slotStart || appointment.dateTime)}
-          </dd>
+          <dt className={dtLabel}>Date & time</dt>
+          <dd className={ddValue}>{slotLabel(appointment.slotStart || appointment.dateTime)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium text-slate-500">Chief complaint</dt>
-          <dd className="mt-1 text-sm text-slate-800">
-            {appointment.chiefComplaint || "Not provided yet"}
-          </dd>
+          <dt className={dtLabel}>Chief complaint</dt>
+          <dd className={ddValue}>{appointment.chiefComplaint || "Not provided yet"}</dd>
         </div>
       </dl>
 
       {canCancel(status) && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
           <button
             type="button"
             disabled={cancelling}
             onClick={() => onCancel(id)}
-            className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+            className={btnDangerOutline}
           >
             {cancelling ? "Cancelling…" : "Cancel appointment"}
           </button>
@@ -131,31 +141,16 @@ export default function MyAppointments() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">My appointments</h1>
-          <p className="mt-1 text-sm text-slate-600">Pending, confirmed, and completed.</p>
-        </div>
-        <Link
-          to="/patients/doctors"
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          Book new
+    <div className={pageWrap}>
+      <PageHeader title="My appointments" description="Pending, confirmed, and completed.">
+        <Link to="/patients/doctors">
+          <Button size="sm">Book new</Button>
         </Link>
-      </div>
+      </PageHeader>
 
       <div className="mt-6 grid gap-3">
-        {loading && (
-          <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            Loading…
-          </div>
-        )}
-        {!loading && items.length === 0 && (
-          <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            No appointments yet.
-          </div>
-        )}
+        {loading && <div className={emptyState}>Loading…</div>}
+        {!loading && items.length === 0 && <div className={emptyState}>No appointments yet.</div>}
         {!loading &&
           items.map((a) => (
             <AppointmentCard
@@ -169,47 +164,35 @@ export default function MyAppointments() {
 
       {cancelModal.open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className={modalOverlay}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeCancelModal();
           }}
         >
-          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl">
-            <div className="text-sm font-semibold text-slate-900">Cancel appointment</div>
-            <div className="mt-1 text-xs text-slate-600">
+          <div className={modalPanel}>
+            <div className="text-sm font-semibold text-text">Cancel appointment</div>
+            <div className="mt-1 text-xs text-text-muted">
               Add a reason (optional). This action can’t be undone.
             </div>
 
             <div className="mt-4">
-              <label className="text-xs font-medium text-slate-700">Reason (optional)</label>
+              <label className={labelSm}>Reason (optional)</label>
               <textarea
                 value={cancelModal.reason}
-                onChange={(e) =>
-                  setCancelModal((s) => ({ ...s, reason: e.target.value }))
-                }
+                onChange={(e) => setCancelModal((s) => ({ ...s, reason: e.target.value }))}
                 rows={3}
                 placeholder="e.g. Not feeling well, need to reschedule…"
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+                className={input}
               />
             </div>
 
             <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                disabled={Boolean(cancellingId)}
-                onClick={closeCancelModal}
-                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
+              <Button variant="secondary" size="sm" disabled={Boolean(cancellingId)} onClick={closeCancelModal}>
                 Close
-              </button>
-              <button
-                type="button"
-                disabled={Boolean(cancellingId)}
-                onClick={confirmCancel}
-                className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
-              >
+              </Button>
+              <Button variant="danger" size="sm" disabled={Boolean(cancellingId)} onClick={confirmCancel}>
                 {cancellingId ? "Cancelling…" : "Confirm cancel"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

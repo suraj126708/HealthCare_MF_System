@@ -1,6 +1,11 @@
 import { api } from "./api";
 
 export const adminApi = {
+  async getDashboardStats() {
+    const res = await api.get("/admin/dashboard");
+    return res?.data?.data;
+  },
+
   async listDoctors({ specialization } = {}) {
     const res = await api.get("/admin/doctors", { params: { specialization } });
     return res?.data?.data;

@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.use(auth, roleGuard('admin'));
 
+router.get('/dashboard', adminController.getDashboardStats);
 router.post('/doctors', adminController.createDoctor);
 router.get('/doctors', adminController.listDoctors);
 router.get('/doctors/:doctorId', adminController.getDoctor);

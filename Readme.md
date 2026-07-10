@@ -52,7 +52,6 @@ cd server && npm install && npm run dev     # terminal 1
 cd client && npm install && npm run dev     # terminal 2
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -68,7 +67,6 @@ cd client && npm install && npm run dev     # terminal 2
 | **Calendar** | Google Calendar, admin-level OAuth, patients added as attendees |
 | **Deployment target** | Render (persistent process required for `node-cron`) |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -91,7 +89,6 @@ cd client && npm install && npm run dev     # terminal 2
 - Create and manage doctor profiles (specialization, working hours, slot duration)
 - Mark leave on behalf of any doctor, with the same conflict-safe cascade
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -108,7 +105,6 @@ cd client && npm install && npm run dev     # terminal 2
 | Scheduled jobs | node-cron |
 | Hosting | Render |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -125,7 +121,6 @@ flowchart LR
 ```
 *The API is the single point of truth — the client never talks to Mongo, the LLM providers, Calendar, or SMTP directly, keeping every side effect auditable and consistently error-handled in one place.*
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -153,7 +148,6 @@ Marking a leave day immediately queries every `Appointment` for that doctor on t
 
 Email delivery is treated as unreliable by design — SMTP can be slow, rate-limited, or temporarily down — so no user-facing action blocks waiting for a send to succeed. Every outbound message is persisted as a `Notification` document before any send attempt. If the immediate attempt fails, it's marked `failed` with an incremented `attempts` counter and a `nextRetryAt` computed via exponential backoff (1 min → 5 min → 15 min → 1 hr → 6 hr). A `node-cron` job sweeps due, failed notifications every five minutes and retries them; after five exhausted attempts the record stays `failed` permanently, leaving a clear audit trail instead of silent data loss.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -170,7 +164,6 @@ Email delivery is treated as unreliable by design — SMTP can be slow, rate-lim
 
 📄 Full field-by-field detail: [`docs/DB_SCHEMA.md`](./docs/DB_SCHEMA.md)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -187,7 +180,6 @@ Every response follows `{ success, data?, message? }`; errors follow `{ success:
 
 📄 Full endpoint reference with request/response examples: [`docs/API_ROUTES.md`](./docs/API_ROUTES.md)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -201,7 +193,6 @@ Every response follows `{ success, data?, message? }`; errors follow `{ success:
 
 Both prompts force JSON-mode structured output. **OpenAI (`gpt-4o-mini`)** is called first; on any failure (rate limit, network error, malformed JSON), the system falls back to **Groq (`llama-3.3-70b-versatile`)**. If both fail, the record is saved with `llmStatus: 'failed'` and the request still succeeds — an LLM outage never blocks a booking or a completed visit. Medication reminders are always derived from the doctor's structured prescription fields, never parsed from generated text.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -218,7 +209,6 @@ Both prompts force JSON-mode structured output. **OpenAI (`gpt-4o-mini`)** is ca
 4. Generate a refresh token once via [Google's OAuth Playground](https://developers.google.com/oauthplayground): use your own credentials, request scope `https://www.googleapis.com/auth/calendar`, authorize, and copy the refresh token.
 5. Put that value in `GOOGLE_REFRESH_TOKEN` — this single token authenticates calendar access for every appointment, with no per-patient OAuth ever required.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -251,7 +241,6 @@ cd server && npm run dev
 cd client && npm run dev
 ```
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -287,7 +276,6 @@ VITE_API_BASE_URL=http://localhost:5000/api
 ```
 </details>
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -299,7 +287,6 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 **🔗 Live app:** _add hosted URL here after deployment_
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
@@ -314,30 +301,35 @@ VITE_API_BASE_URL=http://localhost:5000/api
 | Email and Google Calendar integration | [Email & Google Calendar Integration](#email--google-calendar-integration) |
 | Documentation | This file + `docs/` |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ---
 
 ## Screenshots
 
-*Add screenshots once the app is running — drop images into `docs/screenshots/` with the filenames below and they'll render automatically.*
+Screenshots are stored in [`Project_Images/`](./Project_Images/).
 
-**Patient Portal**
+**Landing & theme**
 
-| Doctor Search | Booking Flow | Post-Visit Summary |
+| Landing page | Dark theme |
+|:---:|:---:|
+| ![Landing page](./Project_Images/Hero_Page.png) | ![Dark theme](./Project_Images/Dark_theme.png) |
+
+**Patient portal**
+
+| Find doctors | My appointments | Medications |
 |:---:|:---:|:---:|
-| ![Doctor Search](docs/screenshots/patient-doctor-search.png) | ![Booking Flow](docs/screenshots/patient-booking-flow.png) | ![Post-Visit Summary](docs/screenshots/patient-summary.png) |
+| ![Find doctors](./Project_Images/Find_doctors.png) | ![My appointments](./Project_Images/MyAppointments.png) | ![Medications](./Project_Images/Medications.png) |
 
-**Doctor Portal**
+**Doctor portal**
 
-| Appointment Queue | Pre-Visit Summary |
-|:---:|:---:|
-| ![Appointment Queue](docs/screenshots/doctor-queue.png) | ![Pre-Visit Summary](docs/screenshots/doctor-previsit.png) |
+| Doctor dashboard | AI pre-visit questions | Auto-fill prescription |
+|:---:|:---:|:---:|
+| ![Doctor dashboard](./Project_Images/Doctors_dashboard.png) | ![AI pre-visit questions](./Project_Images/Ai_generated_Questions.png) | ![Auto-fill prescription](./Project_Images/AutoFIll_prescription.png) |
 
-**Admin Portal**
+**Admin portal**
 
-| Doctor Management | Leave Calendar |
-|:---:|:---:|
-| ![Doctor Management](docs/screenshots/admin-doctors.png) | ![Leave Calendar](docs/screenshots/admin-leave.png) |
+| Admin dashboard | Edit doctors | Leave calendar |
+|:---:|:---:|:---:|
+| ![Admin dashboard](./Project_Images/Admin_dashboard.png) | ![Edit doctors](./Project_Images/EditDoctors.png) | ![Leave calendar](./Project_Images/Leaves_Doctors.png) |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

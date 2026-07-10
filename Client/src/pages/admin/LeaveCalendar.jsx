@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import { card, input, label, pageWrap, select } from "../../constants/ui";
 import adminApi from "../../services/admin";
 
 export default function LeaveCalendar() {
@@ -54,21 +57,21 @@ export default function LeaveCalendar() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-lg font-semibold text-slate-900">Leave calendar</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Mark leave for any doctor and confirm affected appointment count.
-      </p>
+    <div className={pageWrap}>
+      <PageHeader
+        title="Leave calendar"
+        description="Mark leave for any doctor and confirm affected appointment count."
+      />
 
-      <form onSubmit={onSubmit} className="mt-6 max-w-xl rounded-xl border border-slate-200 bg-white p-5">
+      <form onSubmit={onSubmit} className={`mt-6 max-w-xl ${card}`}>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700">Doctor</label>
+            <label className={label}>Doctor</label>
             <select
               value={doctorId}
               disabled={loadingDoctors}
               onChange={(e) => setDoctorId(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className={select}
             >
               {doctors.map((doc) => {
                 const id = doc._id || doc.id;
@@ -81,35 +84,30 @@ export default function LeaveCalendar() {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Date</label>
+            <label className={label}>Date</label>
             <input
               required
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className={input}
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Reason</label>
+            <label className={label}>Reason</label>
             <textarea
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className={input}
               placeholder="Optional reason"
             />
           </div>
-          <button
-            type="submit"
-            disabled={submitting || loadingDoctors}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting || loadingDoctors}>
             {submitting ? "Submitting…" : "Mark leave"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
   );
 }
-

@@ -4,7 +4,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { HeartPulse } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import Button from "../../components/ui/Button";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -12,6 +14,9 @@ const schema = z.object({
   phone: z.string().min(8).optional().or(z.literal("")),
   password: z.string().min(6),
 });
+
+const inputClass =
+  "mt-1.5 w-full rounded-xl border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20";
 
 export default function Register() {
   const { register: registerUser } = useAuth();
@@ -37,78 +42,76 @@ export default function Register() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 py-10">
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Register</h1>
-        <p className="mt-1 text-sm text-slate-600">Patients only.</p>
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-16">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -bottom-32 left-0 h-80 w-80 rounded-full bg-emerald-200/20 blur-3xl dark:bg-emerald-800/10" />
+      </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <div>
-            <label className="text-sm font-medium text-slate-700">Name</label>
-            <input
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              {...register("name")}
-            />
-            {errors.name && (
-              <div className="mt-1 text-xs text-red-600">{errors.name.message}</div>
-            )}
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700">Email</label>
-            <input
-              type="email"
-              autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              {...register("email")}
-            />
-            {errors.email && (
-              <div className="mt-1 text-xs text-red-600">{errors.email.message}</div>
-            )}
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700">Phone (optional)</label>
-            <input
-              autoComplete="tel"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              {...register("phone")}
-            />
-            {errors.phone && (
-              <div className="mt-1 text-xs text-red-600">{errors.phone.message}</div>
-            )}
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-700">Password</label>
-            <input
-              type="password"
-              autoComplete="new-password"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              {...register("password")}
-            />
-            {errors.password && (
-              <div className="mt-1 text-xs text-red-600">{errors.password.message}</div>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-          >
-            {isSubmitting ? "Creating…" : "Create account"}
-          </button>
-        </form>
-
-        <p className="mt-4 text-sm text-slate-600">
-          Already have an account?{" "}
-          <Link className="font-medium text-slate-900 underline" to="/login">
-            Login
+      <div className="relative w-full max-w-md">
+        <div className="mb-8 text-center">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-white shadow-sm">
+              <HeartPulse className="h-5 w-5" />
+            </div>
+            <span className="text-lg font-semibold text-text">MediBook</span>
           </Link>
-        </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+          <h1 className="text-xl font-semibold text-text">Create account</h1>
+          <p className="mt-1 text-sm text-text-muted">Patient registration only.</p>
+
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label className="text-sm font-medium text-text">Name</label>
+              <input className={inputClass} {...register("name")} />
+              {errors.name && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.name.message}</div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-text">Email</label>
+              <input type="email" autoComplete="email" className={inputClass} {...register("email")} />
+              {errors.email && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email.message}</div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-text">Phone (optional)</label>
+              <input autoComplete="tel" className={inputClass} {...register("phone")} />
+              {errors.phone && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.phone.message}</div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-text">Password</label>
+              <input
+                type="password"
+                autoComplete="new-password"
+                className={inputClass}
+                {...register("password")}
+              />
+              {errors.password && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</div>
+              )}
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Creating…" : "Create account"}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-text-muted">
+            Already have an account?{" "}
+            <Link className="font-semibold text-brand-600 hover:underline dark:text-brand-400" to="/login">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-

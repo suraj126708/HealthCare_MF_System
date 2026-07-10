@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import {
+  link,
+  pageWrap,
+  tableHead,
+  tableWrap,
+  td,
+  th,
+  trDivider,
+} from "../../constants/ui";
 import adminApi from "../../services/admin";
 
 export default function AdminDoctorList() {
@@ -26,36 +37,27 @@ export default function AdminDoctorList() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">Doctors</h1>
-          <p className="mt-1 text-sm text-slate-600">Manage doctor profiles.</p>
-        </div>
-        <Link
-          to="/admin/doctors/new"
-          className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          Add doctor
+    <div className={pageWrap}>
+      <PageHeader title="Doctors" description="Manage doctor profiles.">
+        <Link to="/admin/doctors/new">
+          <Button size="sm">Add doctor</Button>
         </Link>
-      </div>
+      </PageHeader>
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className={`mt-6 ${tableWrap}`}>
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
+          <thead className={tableHead}>
             <tr>
-              <th className="px-4 py-3 font-semibold text-slate-700">Name</th>
-              <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
-              <th className="px-4 py-3 font-semibold text-slate-700">
-                Specialization
-              </th>
-              <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
+              <th className={th}>Name</th>
+              <th className={th}>Email</th>
+              <th className={th}>Specialization</th>
+              <th className={th}>Action</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={4} className="px-4 py-5 text-slate-600">
+                <td colSpan={4} className={`${td} text-text-muted`}>
                   Loading…
                 </td>
               </tr>
@@ -64,17 +66,12 @@ export default function AdminDoctorList() {
               items.map((doc) => {
                 const id = doc.id || doc._id;
                 return (
-                  <tr key={id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 text-slate-900">{doc.name}</td>
-                    <td className="px-4 py-3 text-slate-700">{doc.email}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {doc.profile.specialization}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        to={`/admin/doctors/${id}`}
-                        className="font-medium text-slate-900 underline"
-                      >
+                  <tr key={id} className={trDivider}>
+                    <td className={`${td} font-medium`}>{doc.name}</td>
+                    <td className={td}>{doc.email}</td>
+                    <td className={td}>{doc.profile.specialization}</td>
+                    <td className={td}>
+                      <Link to={`/admin/doctors/${id}`} className={link}>
                         Edit
                       </Link>
                     </td>
@@ -83,7 +80,7 @@ export default function AdminDoctorList() {
               })}
             {!loading && items.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-5 text-slate-600">
+                <td colSpan={4} className={`${td} text-text-muted`}>
                   No doctors found.
                 </td>
               </tr>

@@ -10,6 +10,17 @@ const slotService = require('../services/slotService');
 const llmService = require('../services/llmService');
 const calendarService = require('../services/calendarService');
 const notificationService = require('../services/notificationService');
+const { formatAppointmentReference } = require('../utils/appointmentId');
+
+function dayRange(dateStr) {
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  const start = new Date(d);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(d);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+}
 
 exports.listDoctors = asyncHandler(async (req, res) => {
   const { specialization, q } = req.query || {};
@@ -162,9 +173,14 @@ exports.cancel = asyncHandler(async (req, res, next) => {
 });
 
 exports.listAppointments = asyncHandler(async (req, res) => {
-  const { status } = req.query || {};
+  const { status, date } = req.query || {};
   const q = { patientId: req.user.id };
   if (status) q.status = status;
+
+  if (date) {
+    const range = dayRange(date);
+    if (range) q.slotStart = { $gte: range.start, $lte: range.end };
+  }
 
   const appts = await Appointment.find(q).sort({ slotStart: -1 }).lean();
 
@@ -191,6 +207,7 @@ exports.listAppointments = asyncHandler(async (req, res) => {
     return {
       ...a,
       id: apptKey,
+      referenceId: formatAppointmentReference(a._id),
       doctorName: doctorNames.get(doctorKey) || null,
       specialization: specializations.get(doctorKey) || null,
       chiefComplaint: chiefComplaints.get(apptKey) || null,
@@ -205,9 +222,10 @@ exports.getAppointment = asyncHandler(async (req, res, next) => {
   const appt = await Appointment.findOne({ _id: id, patientId: req.user.id }).lean();
   if (!appt) return next(new AppError(404, 'Appointment not found'));
 
-  const [post, doctor] = await Promise.all([
+  const [post, doctor, profile] = await Promise.all([
     PostVisitSummary.findOne({ appointmentId: id }).lean(),
     User.findById(appt.doctorId).select('name').lean(),
+    DoctorProfile.findOne({ userId: appt.doctorId }).select('specialization').lean(),
   ]);
 
   res.json({
@@ -215,14 +233,119 @@ exports.getAppointment = asyncHandler(async (req, res, next) => {
     data: {
       ...appt,
       id: appt._id.toString(),
+      referenceId: formatAppointmentReference(appt._id),
       doctorName: doctor?.name || null,
+      specialization: profile?.specialization || null,
       postVisitSummary: post || null,
     },
   });
 });
 
 exports.listMedications = asyncHandler(async (req, res) => {
-  const meds = await MedicationReminder.find({ patientId: req.user.id, active: true }).lean();
-  res.json({ success: true, data: meds });
+  const patientId = req.user.id;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const FREQUENCY_LABELS = {
+    OD: 'Once daily',
+    BD: 'Twice daily',
+    TDS: 'Three times daily',
+    QID: 'Four times daily',
+  };
+  const INSTRUCTION_LABELS = {
+    before_food: 'Before food',
+    after_food: 'After food',
+  };
+
+  const completedAppts = await Appointment.find({
+    patientId,
+    status: 'completed',
+  })
+    .select('_id slotStart doctorId')
+    .sort({ slotStart: -1 })
+    .lean();
+
+  const apptIds = completedAppts.map((a) => a._id);
+  const doctorIds = [...new Set(completedAppts.map((a) => a.doctorId?.toString()).filter(Boolean))];
+
+  const [summaries, reminders, doctors, profiles] = await Promise.all([
+    PostVisitSummary.find({ appointmentId: { $in: apptIds } }).lean(),
+    MedicationReminder.find({ patientId }).sort({ startDate: -1 }).lean(),
+    User.find({ _id: { $in: doctorIds } }).select('_id name').lean(),
+    DoctorProfile.find({ userId: { $in: doctorIds } }).select('userId specialization').lean(),
+  ]);
+
+  const apptById = new Map(completedAppts.map((a) => [a._id.toString(), a]));
+  const summaryByAppt = new Map(summaries.map((s) => [s.appointmentId.toString(), s]));
+  const doctorNames = new Map(doctors.map((d) => [d._id.toString(), d.name]));
+  const specializations = new Map(profiles.map((p) => [p.userId.toString(), p.specialization]));
+
+  const reminderByKey = new Map(
+    reminders.map((r) => [`${r.appointmentId?.toString()}:${r.drug?.toLowerCase()}`, r])
+  );
+
+  const all = [];
+
+  for (const appt of completedAppts) {
+    const apptKey = appt._id.toString();
+    const summary = summaryByAppt.get(apptKey);
+    if (!summary?.prescription?.length) continue;
+
+    const doctorKey = appt.doctorId?.toString();
+
+    for (const rx of summary.prescription) {
+      const reminder =
+        reminderByKey.get(`${apptKey}:${rx.drug?.toLowerCase()}`) ||
+        reminders.find(
+          (r) =>
+            r.appointmentId?.toString() === apptKey &&
+            r.drug?.toLowerCase() === rx.drug?.toLowerCase()
+        );
+
+      const endDate = reminder?.endDate
+        ? new Date(reminder.endDate)
+        : (() => {
+            const d = new Date(appt.slotStart);
+            d.setDate(d.getDate() + (Number(rx.durationDays) || 0));
+            return d;
+          })();
+
+      const isActive = Boolean(reminder?.active) && endDate >= today;
+
+      all.push({
+        id: reminder?._id?.toString() || `${apptKey}-${rx.drug}`,
+        appointmentId: apptKey,
+        referenceId: formatAppointmentReference(appt._id),
+        drug: rx.drug,
+        dosage: rx.dosage,
+        frequency: rx.frequency || null,
+        frequencyLabel:
+          FREQUENCY_LABELS[rx.frequency] ||
+          (rx.frequencyPerDay ? `${rx.frequencyPerDay} time(s) daily` : null),
+        frequencyPerDay: rx.frequencyPerDay || reminder?.frequencyPerDay || null,
+        durationDays: rx.durationDays || reminder?.durationDays || null,
+        instruction: rx.instruction || reminder?.instruction || null,
+        instructionLabel: INSTRUCTION_LABELS[rx.instruction || reminder?.instruction] || null,
+        timesOfDay: reminder?.timesOfDay || [],
+        startDate: reminder?.startDate || appt.slotStart,
+        endDate,
+        status: isActive ? 'active' : 'expired',
+        doctorName: doctorNames.get(doctorKey) || null,
+        specialization: specializations.get(doctorKey) || null,
+        visitDate: appt.slotStart,
+      });
+    }
+  }
+
+  const active = all.filter((m) => m.status === 'active');
+
+  res.json({
+    success: true,
+    data: {
+      active,
+      all,
+      counts: { active: active.length, total: all.length },
+    },
+  });
 });
 

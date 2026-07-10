@@ -1,5 +1,6 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
+import { cardMuted, emptyState } from "../constants/ui";
 
 function slotStartOf(slot) {
   if (typeof slot === "string") return slot;
@@ -35,7 +36,7 @@ export default function SlotGrid({
 }) {
   if (!slots.length) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className={`${emptyState}`}>
         No slots for this date.
       </div>
     );
@@ -55,10 +56,10 @@ export default function SlotGrid({
             disabled={disabled}
             onClick={() => onPick?.(slotStart)}
             className={[
-              "rounded-lg border px-3 py-2 text-sm font-medium",
+              "rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
               disabled
-                ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
-                : "border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50",
+                ? "cursor-not-allowed border-border bg-surface-muted text-text-subtle"
+                : "border-border bg-surface text-text hover:border-brand-300 hover:bg-brand-50 dark:hover:border-brand-700 dark:hover:bg-brand-950/40",
             ].join(" ")}
           >
             {booked ? `${slotLabel(slotStart)} · Booked` : slotLabel(slotStart)}

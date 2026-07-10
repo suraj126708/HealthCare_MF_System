@@ -3,7 +3,27 @@ import { format, parseISO } from "date-fns";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Badge from "../../components/Badge";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import {
+  card,
+  ddValue,
+  dtLabel,
+  emptyState,
+  input,
+  labelSm,
+  pageWrap,
+} from "../../constants/ui";
 import { doctorApi } from "../../services/doctor";
+
+const STATUS_FILTERS = [
+  { value: "", label: "All statuses" },
+  { value: "pending", label: "Pending" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+  { value: "cancelled_leave", label: "Cancelled (leave)" },
+];
 
 function slotLabel(slotStart) {
   if (!slotStart) return "—";
@@ -28,13 +48,15 @@ function QueueCard({ appointment }) {
   const status = appointment.status || "pending";
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className={card}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-slate-900">
+          <div className="text-sm font-semibold text-text">
             {appointment.patientName || appointment.patient?.name || "Patient"}
           </div>
-          <div className="mt-1 text-xs text-slate-600">Patient appointment</div>
+          <div className="mt-1 text-xs text-text-muted">
+            {appointment.referenceId ? `Ref ${appointment.referenceId}` : "Patient appointment"}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           <Badge variant="status" value={status} />
@@ -46,43 +68,33 @@ function QueueCard({ appointment }) {
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-medium text-slate-500">Date & time</dt>
-          <dd className="mt-1 text-sm text-slate-800">
-            {slotLabel(appointment.slotStart)}
+          <dt className={dtLabel}>Doctor</dt>
+          <dd className={ddValue}>
+            {appointment.doctorName || "—"}
+            {appointment.specialization ? (
+              <span className="block text-xs text-text-muted">{appointment.specialization}</span>
+            ) : null}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-medium text-slate-500">
-            Chief complaint
-          </dt>
-          <dd className="mt-1 text-sm text-slate-800">
-            {appointment.chiefComplaint || "Not provided yet"}
-          </dd>
+          <dt className={dtLabel}>Date & time</dt>
+          <dd className={ddValue}>{slotLabel(appointment.slotStart)}</dd>
+        </div>
+        <div className="sm:col-span-2">
+          <dt className={dtLabel}>Chief complaint</dt>
+          <dd className={ddValue}>{appointment.chiefComplaint || "Not provided yet"}</dd>
         </div>
       </dl>
 
-      {/* {appointment.symptoms && (
-        <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3">
-          <div className="text-xs font-medium text-slate-500">Symptoms</div>
-          <div className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
-            {appointment.symptoms}
-          </div>
-        </div>
-      )} */}
-
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-        <Link
-          to={`/doctor/appointments/${appointmentId}`}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          View details
+      <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+        <Link to={`/doctor/appointments/${appointmentId}`}>
+          <Button variant="secondary" size="sm">
+            View details
+          </Button>
         </Link>
         {canComplete(status) && (
-          <Link
-            to={`/doctor/appointments/${appointmentId}/complete`}
-            className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800"
-          >
-            Complete appointment
+          <Link to={`/doctor/appointments/${appointmentId}/complete`}>
+            <Button size="sm">Complete appointment</Button>
           </Link>
         )}
       </div>
@@ -92,17 +104,20 @@ function QueueCard({ appointment }) {
 
 export default function DoctorDashboard() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
 
-  const loadQueue = async (nextDate) => {
+  const loadQueue = async ({ nextDate = date, nextStatus = status } = {}) => {
     setLoading(true);
     try {
-      const data = await doctorApi.listAppointments({ date: nextDate });
+      const data = await doctorApi.listAppointments({
+        date: nextDate,
+        status: nextStatus || undefined,
+      });
       const appointments = data?.appointments ?? data ?? [];
       const sorted = [...appointments].sort(
-        (a, b) =>
-          new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime(),
+        (a, b) => new Date(a.slotStart).getTime() - new Date(b.slotStart).getTime(),
       );
       setItems(sorted);
     } catch (e) {
@@ -113,47 +128,56 @@ export default function DoctorDashboard() {
   };
 
   useEffect(() => {
-    loadQueue(date);
+    loadQueue();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const titleDate = useMemo(() => date, [date]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900">
-            Doctor dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Today&apos;s queue, sorted by slot time.
-          </p>
+    <div className={pageWrap}>
+      <PageHeader title="Doctor dashboard" description="Today's queue, sorted by slot time.">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div>
+            <label className={labelSm}>Status</label>
+            <select
+              value={status}
+              onChange={(e) => {
+                const nextStatus = e.target.value;
+                setStatus(nextStatus);
+                loadQueue({ nextDate: date, nextStatus });
+              }}
+              className={input}
+            >
+              {STATUS_FILTERS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelSm}>Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDate(next);
+                loadQueue({ nextDate: next, nextStatus: status });
+              }}
+              className={input}
+            />
+          </div>
         </div>
-        <div>
-          <label className="text-xs font-medium text-slate-600">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              const next = e.target.value;
-              setDate(next);
-              loadQueue(next);
-            }}
-            className="mt-1 block rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-          />
-        </div>
-      </div>
+      </PageHeader>
 
       <div className="mt-6 grid gap-3">
-        {loading && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            Loading queue…
-          </div>
-        )}
+        {loading && <div className={emptyState}>Loading queue…</div>}
         {!loading && items.length === 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            No appointments for {titleDate}.
+          <div className={emptyState}>
+            No appointments for {titleDate}
+            {status ? ` with status "${status}"` : ""}.
           </div>
         )}
         {!loading &&

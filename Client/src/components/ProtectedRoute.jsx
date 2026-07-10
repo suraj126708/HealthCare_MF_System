@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { emptyState, pageWrap } from "../constants/ui";
 
 export default function ProtectedRoute({ allowedRoles }) {
   const { user, bootstrapping } = useAuth();
@@ -8,10 +9,8 @@ export default function ProtectedRoute({ allowedRoles }) {
 
   if (bootstrapping) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-10">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700">
-          Loading…
-        </div>
+      <div className={pageWrap}>
+        <div className={emptyState}>Loading…</div>
       </div>
     );
   }
@@ -26,4 +25,3 @@ export default function ProtectedRoute({ allowedRoles }) {
 
   return <Outlet />;
 }
-

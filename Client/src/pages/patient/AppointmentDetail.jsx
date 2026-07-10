@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import Badge from "../../components/Badge";
+import PageHeader from "../../components/ui/PageHeader";
+import { card, cardMuted, emptyState, pageWrap } from "../../constants/ui";
+import { formatPrescriptionLine } from "../../constants/prescription";
 import { appointmentsApi } from "../../services/appointments";
 
 export default function PatientAppointmentDetail() {
@@ -28,58 +31,59 @@ export default function PatientAppointmentDetail() {
   }, [appointmentId]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-lg font-semibold text-slate-900">Appointment</h1>
-      {loading && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-          Loading…
-        </div>
-      )}
+    <div className={pageWrap}>
+      <PageHeader title="Appointment" />
+      {loading && <div className={`mt-4 ${emptyState}`}>Loading…</div>}
       {!loading && data && (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-6">
+        <div className={`mt-4 ${card}`}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-slate-900">
+              <div className="text-sm font-semibold text-text">
                 {data.doctorName || data.doctor?.name || "Doctor"}
               </div>
-              <div className="mt-1 text-xs text-slate-600">{data.slotStart || "Slot"}</div>
+              <div className="mt-1 text-xs text-text-muted">{data.slotStart || "Slot"}</div>
             </div>
             <Badge variant="status" value={data.status || "pending"} />
           </div>
 
           {data.patientFriendlySummary && (
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-medium text-slate-500">Summary</div>
-              <div className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
+            <div className={`mt-4 ${cardMuted}`}>
+              <div className="text-xs font-medium text-text-muted">Summary</div>
+              <div className="mt-1 whitespace-pre-wrap text-sm text-text">
                 {data.patientFriendlySummary}
               </div>
             </div>
           )}
 
           {data.followUpSteps && (
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-medium text-slate-500">Follow-up steps</div>
-              <div className="mt-1 whitespace-pre-wrap text-sm text-slate-800">
-                {data.followUpSteps}
-              </div>
+            <div className={`mt-4 ${cardMuted}`}>
+              <div className="text-xs font-medium text-text-muted">Follow-up steps</div>
+              <div className="mt-1 whitespace-pre-wrap text-sm text-text">{data.followUpSteps}</div>
             </div>
           )}
 
-          {!!(data.medicationSchedule || data.prescription?.length) && (
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-medium text-slate-500">Medication schedule</div>
-              <div className="mt-1 text-sm text-slate-800">
+          {!!(data.medicationSchedule || data.postVisitSummary?.prescription?.length || data.prescription?.length) && (
+            <div className={`mt-4 ${cardMuted}`}>
+              <div className="text-xs font-medium text-text-muted">Medication schedule</div>
+              <div className="mt-1 text-sm text-text">
                 {data.medicationSchedule || "See prescribed medication list below."}
               </div>
-              {Array.isArray(data.prescription) && data.prescription.length > 0 && (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-800">
-                  {data.prescription.map((p, idx) => (
-                    <li key={`${p.drug}-${idx}`}>
-                      {p.drug} - {p.dosage}, {p.frequencyPerDay}x/day for {p.durationDays} day(s)
-                    </li>
+              {Array.isArray(data.postVisitSummary?.prescription) && data.postVisitSummary.prescription.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-text">
+                  {data.postVisitSummary.prescription.map((p, idx) => (
+                    <li key={`${p.drug}-${idx}`}>{formatPrescriptionLine(p)}</li>
                   ))}
                 </ul>
               )}
+              {!data.postVisitSummary?.prescription?.length &&
+                Array.isArray(data.prescription) &&
+                data.prescription.length > 0 && (
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-text">
+                    {data.prescription.map((p, idx) => (
+                      <li key={`${p.drug}-${idx}`}>{formatPrescriptionLine(p)}</li>
+                    ))}
+                  </ul>
+                )}
             </div>
           )}
         </div>
@@ -87,4 +91,3 @@ export default function PatientAppointmentDetail() {
     </div>
   );
 }
-

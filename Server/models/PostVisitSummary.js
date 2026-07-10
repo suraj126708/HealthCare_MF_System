@@ -13,8 +13,10 @@ const postVisitSummarySchema = new mongoose.Schema(
       {
         drug: String,
         dosage: String,
+        frequency: String,
         frequencyPerDay: Number,
         durationDays: Number,
+        instruction: String,
       },
     ],
     patientFriendlySummary: String,

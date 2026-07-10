@@ -4,8 +4,10 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, HeartPulse } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import Button from "../../components/ui/Button";
+import { input, label, link } from "../../constants/ui";
 
 const schema = z.object({
   email: z.string().email(),
@@ -37,71 +39,77 @@ export default function Login() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 py-40 ">
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <h1 className="text-lg font-semibold text-slate-900">Login</h1>
-        <p className="mt-1 text-sm text-slate-600">Access your portal.</p>
+    <div className="relative flex min-h-screen items-center justify-center px-4 py-16">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 right-0 h-80 w-80 rounded-full bg-brand-200/30 blur-3xl dark:bg-brand-800/20" />
+      </div>
 
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <div>
-            <label className="text-sm font-medium text-slate-700">Email</label>
-            <input
-              type="email"
-              autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
-              {...register("email")}
-            />
-            {errors.email && (
-              <div className="mt-1 text-xs text-red-600">
-                {errors.email.message}
-              </div>
-            )}
-          </div>
+      <div className="relative w-full max-w-md">
+        <div className="mb-8 text-center">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-600 text-white shadow-sm">
+              <HeartPulse className="h-5 w-5" />
+            </div>
+            <span className="text-lg font-semibold text-text">MediBook</span>
+          </Link>
+        </div>
 
-          <div>
-            <label className="text-sm font-medium text-slate-700">
-              Password
-            </label>
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+          <h1 className="text-xl font-semibold text-text">Welcome back</h1>
+          <p className="mt-1 text-sm text-text-muted">Sign in to access your portal.</p>
 
-            <div className="relative mt-1">
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label className="text-sm font-medium text-text">Email</label>
               <input
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 pr-12 text-sm outline-none focus:border-slate-400"
-                {...register("password")}
+                type="email"
+                autoComplete="email"
+                className="mt-1.5 w-full rounded-xl border border-border bg-surface-elevated px-3 py-2.5 text-sm text-text outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                {...register("email")}
               />
-
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-800"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              {errors.email && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {errors.email.message}
+                </div>
+              )}
             </div>
 
-            {errors.password && (
-              <div className="mt-1 text-xs text-red-600">
-                {errors.password.message}
+            <div>
+              <label className="text-sm font-medium text-text">Password</label>
+              <div className="relative mt-1.5">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  className="w-full rounded-xl border border-border bg-surface-elevated px-3 py-2.5 pr-12 text-sm text-text outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-text-subtle hover:text-text"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-            )}
-          </div>
+              {errors.password && (
+                <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {errors.password.message}
+                </div>
+              )}
+            </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-          >
-            {isSubmitting ? "Signing in…" : "Login"}
-          </button>
-        </form>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
 
-        <p className="mt-4 text-sm text-slate-600">
-          New patient?{" "}
-          <Link className="font-medium text-slate-900 underline" to="/register">
-            Create account
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-sm text-text-muted">
+            New patient?{" "}
+            <Link className="font-semibold text-brand-600 hover:underline dark:text-brand-400" to="/register">
+              Create account
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

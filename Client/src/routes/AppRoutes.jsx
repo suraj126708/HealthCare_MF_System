@@ -17,14 +17,16 @@ import DoctorAppointmentDetail from "../pages/doctor/AppointmentDetail";
 import PostVisitForm from "../pages/doctor/PostVisitForm";
 import LeaveManager from "../pages/doctor/LeaveManager";
 
+import AdminDashboard from "../pages/admin/Dashboard";
 import AdminDoctorList from "../pages/admin/DoctorList";
 import AdminDoctorForm from "../pages/admin/DoctorForm";
 import LeaveCalendar from "../pages/admin/LeaveCalendar";
+import Landing from "../pages/Landing";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/patients/doctors" replace />} />
+      <Route path="/" element={<Landing />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -47,13 +49,14 @@ export default function AppRoutes() {
       </Route>
 
       <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/doctors" element={<AdminDoctorList />} />
         <Route path="/admin/doctors/new" element={<AdminDoctorForm />} />
         <Route path="/admin/doctors/:doctorId" element={<AdminDoctorForm />} />
         <Route path="/admin/leaves" element={<LeaveCalendar />} />
       </Route>
 
-      <Route path="*" element={<div className="px-4 py-10 text-center text-slate-600">Not found</div>} />
+      <Route path="*" element={<div className="px-4 py-10 text-center text-text-muted">Not found</div>} />
     </Routes>
   );
 }

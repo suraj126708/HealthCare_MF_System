@@ -10,6 +10,37 @@ const asyncHandler = require('../utils/asyncHandler');
 const llmService = require('../services/llmService');
 const notificationService = require('../services/notificationService');
 const calendarService = require('../services/calendarService');
+const { formatAppointmentReference } = require('../utils/appointmentId');
+
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+async function autoCancelStaleAppointments(doctorId) {
+  const cutoff = startOfToday();
+
+  const stale = await Appointment.find({
+    doctorId,
+    status: 'confirmed',
+    slotStart: { $lt: cutoff },
+  });
+
+  for (const appt of stale) {
+    appt.status = 'cancelled';
+    appt.cancelReason = 'Auto-cancelled: not completed by end of day';
+    await appt.save();
+
+    if (appt.calendarEventId) await calendarService.deleteEvent(appt.calendarEventId);
+
+    await notificationService.create({
+      type: 'cancellation',
+      recipientId: appt.patientId,
+      appointmentId: appt._id,
+    });
+  }
+}
 
 function dayRange(dateStr) {
   const d = new Date(dateStr);
@@ -31,7 +62,25 @@ function timesOfDayFromFrequency(freq) {
   return [];
 }
 
+const FREQUENCY_TO_PER_DAY = { OD: 1, BD: 2, TDS: 3, QID: 4 };
+
+function normalizePrescriptionRow(row) {
+  const frequencyPerDay =
+    Number(row.frequencyPerDay) || FREQUENCY_TO_PER_DAY[row.frequency] || 1;
+
+  return {
+    drug: row.drug,
+    dosage: row.dosage,
+    frequency: row.frequency || null,
+    frequencyPerDay,
+    durationDays: Number(row.durationDays),
+    instruction: row.instruction || null,
+  };
+}
+
 exports.listAppointments = asyncHandler(async (req, res) => {
+  await autoCancelStaleAppointments(req.user.id);
+
   const { date, status } = req.query || {};
   const q = { doctorId: req.user.id };
   if (status) q.status = status;
@@ -46,8 +95,10 @@ exports.listAppointments = asyncHandler(async (req, res) => {
   const patientIds = [...new Set(appts.map((a) => a.patientId?.toString()).filter(Boolean))];
   const appointmentIds = appts.map((a) => a._id);
 
-  const [patients, preVisits] = await Promise.all([
+  const [patients, doctor, profile, preVisits] = await Promise.all([
     User.find({ _id: { $in: patientIds } }).select('_id name').lean(),
+    User.findById(req.user.id).select('name').lean(),
+    DoctorProfile.findOne({ userId: req.user.id }).select('specialization').lean(),
     PreVisitSummary.find({ appointmentId: { $in: appointmentIds } })
       .select('appointmentId chiefComplaint urgencyLevel suggestedQuestions')
       .lean(),
@@ -64,6 +115,9 @@ exports.listAppointments = asyncHandler(async (req, res) => {
     return {
       ...a,
       id: apptKey,
+      referenceId: formatAppointmentReference(a._id),
+      doctorName: doctor?.name || null,
+      specialization: profile?.specialization || null,
       patientName: patientNames.get(patientKey) || null,
       chiefComplaint: preVisit?.chiefComplaint || null,
       urgencyLevel: preVisit?.urgencyLevel || null,
@@ -79,9 +133,11 @@ exports.getAppointment = asyncHandler(async (req, res, next) => {
   const appt = await Appointment.findOne({ _id: id, doctorId: req.user.id }).lean();
   if (!appt) return next(new AppError(404, 'Appointment not found'));
 
-  const [preVisit, patient] = await Promise.all([
+  const [preVisit, patient, doctor, profile] = await Promise.all([
     PreVisitSummary.findOne({ appointmentId: id }).lean(),
     User.findById(appt.patientId).select('name').lean(),
+    User.findById(appt.doctorId).select('name').lean(),
+    DoctorProfile.findOne({ userId: appt.doctorId }).select('specialization').lean(),
   ]);
 
   res.json({
@@ -89,6 +145,9 @@ exports.getAppointment = asyncHandler(async (req, res, next) => {
     data: {
       ...appt,
       id: appt._id.toString(),
+      referenceId: formatAppointmentReference(appt._id),
+      doctorName: doctor?.name || null,
+      specialization: profile?.specialization || null,
       patientName: patient?.name || null,
       preVisitSummary: preVisit || null,
     },
@@ -111,6 +170,7 @@ exports.completeAppointment = asyncHandler(async (req, res, next) => {
   }
 
   const llm = await llmService.generatePostVisitSummary(clinicalNotes);
+  const normalizedPrescription = prescription.map(normalizePrescriptionRow);
   const postVisitPayload =
     llm.llmStatus === 'failed'
       ? { llmStatus: 'failed' }
@@ -127,7 +187,7 @@ exports.completeAppointment = asyncHandler(async (req, res, next) => {
       $set: {
         appointmentId: appt._id,
         clinicalNotes,
-        prescription,
+        prescription: normalizedPrescription,
         ...postVisitPayload,
       },
     },
@@ -138,7 +198,7 @@ exports.completeAppointment = asyncHandler(async (req, res, next) => {
   today.setHours(0, 0, 0, 0);
 
   let remindersCreated = 0;
-  for (const p of prescription) {
+  for (const p of normalizedPrescription) {
     const durationDays = Number(p.durationDays) || 0;
     const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + durationDays);
@@ -148,6 +208,10 @@ exports.completeAppointment = asyncHandler(async (req, res, next) => {
       patientId: appt.patientId,
       drug: p.drug,
       dosage: p.dosage,
+      frequency: p.frequency,
+      frequencyPerDay: p.frequencyPerDay,
+      durationDays: p.durationDays,
+      instruction: p.instruction,
       timesOfDay: timesOfDayFromFrequency(p.frequencyPerDay),
       startDate: today,
       endDate,
@@ -173,6 +237,10 @@ exports.addLeaveDay = asyncHandler(async (req, res, next) => {
   const { date, reason } = req.body || {};
   const range = dayRange(date);
   if (!range) return next(new AppError(400, 'Invalid date'));
+
+  if (range.start < startOfToday()) {
+    return next(new AppError(400, 'Cannot mark leave for a past date'));
+  }
 
   const profile = await DoctorProfile.findOne({ userId: req.user.id });
   if (!profile) return next(new AppError(404, 'Doctor profile not found'));

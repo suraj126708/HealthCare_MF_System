@@ -1,19 +1,31 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import toast from "react-hot-toast";
+import Button from "../../components/ui/Button";
+import PageHeader from "../../components/ui/PageHeader";
+import { card, input, label, pageWrap } from "../../constants/ui";
 import { doctorApi } from "../../services/doctor";
 
 export default function LeaveManager() {
+  const today = format(new Date(), "yyyy-MM-dd");
   const [date, setDate] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
+    if (date < today) {
+      toast.error("Cannot mark leave for a past date.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const data = await doctorApi.markLeave({ date, reason });
       const count = data?.affectedAppointments ?? 0;
       toast.success(`Leave marked. ${count} appointment(s) cancelled.`);
+      setDate("");
       setReason("");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to mark leave");
@@ -23,44 +35,41 @@ export default function LeaveManager() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="text-lg font-semibold text-slate-900">Leave manager</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        Mark a leave day and notify affected patients.
-      </p>
+    <div className={pageWrap}>
+      <PageHeader
+        title="Leave manager"
+        description="Mark a leave day and notify affected patients."
+      />
 
-      <form onSubmit={onSubmit} className="mt-6 max-w-xl rounded-xl border border-slate-200 bg-white p-5">
+      <form onSubmit={onSubmit} className={`mt-6 max-w-xl ${card}`}>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-slate-700">Leave date</label>
+            <label className={label}>Leave date</label>
             <input
               required
               type="date"
+              min={today}
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className={input}
             />
+            <p className="mt-1 text-xs text-text-subtle">Past dates cannot be selected.</p>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Reason</label>
+            <label className={label}>Reason</label>
             <textarea
               rows={3}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+              className={input}
               placeholder="Optional reason"
             />
           </div>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-          >
+          <Button type="submit" disabled={submitting || (date && date < today)}>
             {submitting ? "Submitting…" : "Mark leave"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>
   );
 }
-

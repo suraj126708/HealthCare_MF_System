@@ -18,8 +18,8 @@ export const appointmentsApi = {
     return res?.data?.data;
   },
 
-  async list({ status } = {}) {
-    const res = await api.get("/patients/appointments", { params: { status } });
+  async list({ status, date } = {}) {
+    const res = await api.get("/patients/appointments", { params: { status, date } });
     return res?.data?.data;
   },
 

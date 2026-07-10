@@ -2,6 +2,10 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
 const Appointment = require('../models/Appointment');
+const PreVisitSummary = require('../models/PreVisitSummary');
+const PostVisitSummary = require('../models/PostVisitSummary');
+const MedicationReminder = require('../models/MedicationReminder');
+const Notification = require('../models/Notification');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const calendarService = require('../services/calendarService');
@@ -192,6 +196,164 @@ exports.addLeaveDay = asyncHandler(async (req, res, next) => {
   res.json({
     success: true,
     data: { leaveDay: date, affectedAppointments: affected },
+  });
+});
+
+function toCountMap(rows, keyField = '_id') {
+  const map = {};
+  for (const row of rows) {
+    const key = row[keyField] ?? 'unknown';
+    map[key] = row.count;
+  }
+  return map;
+}
+
+function lastNDays(n) {
+  const days = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+exports.getDashboardStats = asyncHandler(async (req, res) => {
+  const trendDays = 14;
+  const trendStart = new Date();
+  trendStart.setDate(trendStart.getDate() - (trendDays - 1));
+  trendStart.setHours(0, 0, 0, 0);
+
+  const [
+    usersByRole,
+    appointmentsByStatus,
+    appointmentsTrend,
+    specializations,
+    notificationsByStatus,
+    notificationsByType,
+    urgencyLevels,
+    topDoctors,
+    recentAppointments,
+    activeMedicationReminders,
+    completedVisits,
+    totalAppointments,
+    totalLeaveDays,
+    activeDoctors,
+  ] = await Promise.all([
+    User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
+    Appointment.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Appointment.aggregate([
+      { $match: { createdAt: { $gte: trendStart } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    DoctorProfile.aggregate([
+      { $group: { _id: '$specialization', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    Notification.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Notification.aggregate([{ $group: { _id: '$type', count: { $sum: 1 } } }]),
+    PreVisitSummary.aggregate([{ $group: { _id: '$urgencyLevel', count: { $sum: 1 } } }]),
+    Appointment.aggregate([
+      { $group: { _id: '$doctorId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'doctor',
+        },
+      },
+      { $unwind: { path: '$doctor', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          doctorId: '$_id',
+          name: '$doctor.name',
+          count: 1,
+        },
+      },
+    ]),
+    Appointment.find()
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .populate('patientId', 'name')
+      .populate('doctorId', 'name')
+      .select('status slotStart createdAt patientId doctorId')
+      .lean(),
+    MedicationReminder.countDocuments({ active: true }),
+    PostVisitSummary.countDocuments(),
+    Appointment.countDocuments(),
+    DoctorProfile.aggregate([
+      { $unwind: '$leaveDays' },
+      { $count: 'count' },
+    ]).then((r) => r[0]?.count ?? 0),
+    User.countDocuments({ role: 'doctor', isActive: true }),
+  ]);
+
+  const roleCounts = toCountMap(usersByRole);
+  const statusCounts = toCountMap(appointmentsByStatus);
+  const trendMap = toCountMap(appointmentsTrend);
+
+  res.json({
+    success: true,
+    data: {
+      overview: {
+        patients: roleCounts.patient ?? 0,
+        doctors: roleCounts.doctor ?? 0,
+        admins: roleCounts.admin ?? 0,
+        activeDoctors,
+        totalAppointments,
+        completedVisits,
+        activeMedicationReminders,
+        totalLeaveDays,
+      },
+      appointmentsByStatus: Object.entries(statusCounts).map(([status, count]) => ({
+        status,
+        count,
+      })),
+      appointmentsTrend: lastNDays(trendDays).map((date) => ({
+        date,
+        count: trendMap[date] ?? 0,
+      })),
+      specializations: specializations.map((s) => ({
+        name: s._id,
+        count: s.count,
+      })),
+      notificationsByStatus: notificationsByStatus.map((n) => ({
+        status: n._id,
+        count: n.count,
+      })),
+      notificationsByType: notificationsByType.map((n) => ({
+        type: n._id,
+        count: n.count,
+      })),
+      urgencyLevels: urgencyLevels.map((u) => ({
+        level: u._id,
+        count: u.count,
+      })),
+      topDoctors: topDoctors.map((d) => ({
+        doctorId: d.doctorId?.toString(),
+        name: d.name || 'Unknown',
+        appointments: d.count,
+      })),
+      recentAppointments: recentAppointments.map((a) => ({
+        id: a._id.toString(),
+        status: a.status,
+        slotStart: a.slotStart,
+        createdAt: a.createdAt,
+        patientName: a.patientId?.name || 'Patient',
+        doctorName: a.doctorId?.name || 'Doctor',
+      })),
+    },
   });
 });
 
