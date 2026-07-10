@@ -60,7 +60,7 @@ cd client && npm install && npm run dev     # terminal 2
 
 [![Watch the demo](https://img.youtube.com/vi/X8-2wNMop3g/maxresdefault.jpg)](https://www.youtube.com/watch?v=X8-2wNMop3g)
 
-🔗 Or watch directly: [youtube.com/watch?v=YOUR_VIDEO_ID](https://www.youtube.com/watch?v=X8-2wNMop3g)
+🔗 Or watch directly: [youtube.com/watch?v=X8-2wNMop3g](https://www.youtube.com/watch?v=X8-2wNMop3g)
 
 <!-- Replace YOUR_VIDEO_ID (both places above) with your actual YouTube video ID — the part after `v=` in your video's URL. -->
 
