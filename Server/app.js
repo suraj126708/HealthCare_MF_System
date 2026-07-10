@@ -13,7 +13,10 @@ const patientRoutes = require("./routes/patient.routes");
 const doctorRoutes = require("./routes/doctor.routes");
 
 const app = express();
-const ALLOWED_ORIGIN = "http://localhost:5173";
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "https://health-care-mf-system.vercel.app/",
+];
 const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type,Authorization";
 
