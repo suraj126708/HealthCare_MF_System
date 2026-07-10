@@ -7,7 +7,30 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff, HeartPulse } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Button from "../../components/ui/Button";
-import { input, label, link } from "../../constants/ui";
+import { cardMuted, input, label, link } from "../../constants/ui";
+
+const DEMO_PASSWORD = "Password@123";
+
+const DEMO_ACCOUNTS = [
+  {
+    role: "Patient",
+    email: "patient1@hospital.local",
+    password: DEMO_PASSWORD,
+    hint: "Book appointments, view medications",
+  },
+  {
+    role: "Doctor",
+    email: "doctor1@hospital.local",
+    password: DEMO_PASSWORD,
+    hint: "Appointment queue, complete visits",
+  },
+  {
+    role: "Admin",
+    email: "admin@hospital.local",
+    password: DEMO_PASSWORD,
+    hint: "Manage doctors, leave calendar, dashboard",
+  },
+];
 
 const schema = z.object({
   email: z.string().email(),
@@ -25,8 +48,21 @@ export default function Login() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { isSubmitting, errors },
-  } = useForm({ resolver: zodResolver(schema) });
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const fillDemoAccount = ({ email, password, role }) => {
+    setValue("email", email, { shouldValidate: true });
+    setValue("password", password, { shouldValidate: true });
+    toast.success(`${role} demo credentials filled`);
+  };
 
   const onSubmit = async (values) => {
     try {
@@ -102,6 +138,32 @@ export default function Login() {
               {isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
+
+          <div className={`mt-6 ${cardMuted}`}>
+            <p className="text-sm font-semibold text-text">Demo accounts (from seed data)</p>
+            <p className="mt-1 text-xs text-text-muted">
+              All seeded users share the same password: <code className="text-text">{DEMO_PASSWORD}</code>
+            </p>
+            <div className="mt-3 space-y-2">
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.role}
+                  type="button"
+                  onClick={() => fillDemoAccount(account)}
+                  className="flex w-full items-start justify-between gap-3 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition hover:border-brand-300 hover:bg-surface-elevated dark:hover:border-brand-700"
+                >
+                  <div>
+                    <div className="text-sm font-medium text-text">{account.role}</div>
+                    <div className="mt-0.5 text-xs text-text-muted">{account.email}</div>
+                    <div className="mt-1 text-xs text-text-subtle">{account.hint}</div>
+                  </div>
+                  <span className="shrink-0 text-xs font-semibold text-brand-600 dark:text-brand-400">
+                    Use
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-sm text-text-muted">
             New patient?{" "}
