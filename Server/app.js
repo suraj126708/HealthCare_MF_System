@@ -24,7 +24,7 @@ const ALLOWED_HEADERS = "Content-Type,Authorization";
 app.use(helmet());
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin === ALLOWED_ORIGIN) {
+  if (ALLOWED_ORIGINS.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
     res.header("Vary", "Origin");
   }
