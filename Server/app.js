@@ -15,8 +15,8 @@ const doctorRoutes = require("./routes/doctor.routes");
 const app = express();
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
-  "https://health-care-mf-system.vercel.app/",
-  "https://health-care-mf-system-p9kdpjfgp-suraj-gittes-projects.vercel.app/",
+  "https://health-care-mf-system.vercel.app",
+  "https://health-care-mf-system-p9kdpjfgp-suraj-gittes-projects.vercel.app",
 ];
 const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type,Authorization";
