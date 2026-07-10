@@ -39,7 +39,13 @@ app.use((req, res, next) => {
 });
 app.use(
   cors({
-    origin: ALLOWED_ORIGIN,
+    origin: (origin, callback) => {
+      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ALLOWED_METHODS.split(","),
     allowedHeaders: ALLOWED_HEADERS.split(","),
