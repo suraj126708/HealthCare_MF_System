@@ -58,9 +58,9 @@ cd client && npm install && npm run dev     # terminal 2
 
 ## Demo Video
 
-[![Watch the demo](https://img.youtube.com/vi/X8-2wNMop3g/maxresdefault.jpg)](https://www.youtube.com/watch?v=X8-2wNMop3g)
+[![Watch the demo](./Project_Images/Hero_Page.png)](https://drive.google.com/file/d/1BTn8Giir67S2scucnzaV9vtlvQ9gio32/view?usp=sharing)
 
-🔗 Or watch directly: [youtube.com/watch?v=X8-2wNMop3g](https://www.youtube.com/watch?v=X8-2wNMop3g)
+🔗 Or watch directly: [https://drive.google.com/file/d/1BTn8Giir67S2scucnzaV9vtlvQ9gio32/view?usp=sharing](https://drive.google.com/file/d/1BTn8Giir67S2scucnzaV9vtlvQ9gio32/view?usp=sharing)
 
 <!-- Replace YOUR_VIDEO_ID (both places above) with your actual YouTube video ID — the part after `v=` in your video's URL. -->
 
